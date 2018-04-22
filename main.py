@@ -3,7 +3,7 @@ import random
 import re
 import time
 
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import TimedOut
 from telegram.ext import Updater, MessageHandler, RegexHandler, Filters, \
     ConversationHandler, CommandHandler
@@ -23,15 +23,12 @@ MONEY_THRESHOLD = 15
 
 
 def choices_kbrd(amount):
-    all_buttons = list(map(str, range(1, amount + 1)))
+    all_buttons = list(map(lambda x: InlineKeyboardButton(text=str(x)),
+                           range(1, amount + 1)))
     if amount <= 3:
-        return ReplyKeyboardMarkup([all_buttons],
-                                   one_time_keyboard=True,
-                                   resize_keyboard=True)
+        return InlineKeyboardMarkup([all_buttons])
     else:
-        return ReplyKeyboardMarkup([all_buttons[:-2], all_buttons[-2:]],
-                                   one_time_keyboard=True,
-                                   resize_keyboard=True)
+        return InlineKeyboardMarkup([all_buttons[:-2], all_buttons[-2:]])
 
 
 class Money:
@@ -197,8 +194,7 @@ class GameStateManager:
     def prompt_name(self, bot, update):
         user_id = update.message.from_user.id
         logger.debug('new user {} started a conversation'.format(user_id))
-        update.message.reply_text(p.NAME_PROMPT,
-                                  reply_markup=ReplyKeyboardRemove())
+        update.message.reply_text(p.NAME_PROMPT)
         return 0
 
     def save_name(self, bot, update, user_data):
