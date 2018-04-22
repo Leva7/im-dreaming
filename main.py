@@ -3,10 +3,10 @@ import random
 import re
 import time
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from telegram.error import TimedOut
 from telegram.ext import Updater, MessageHandler, RegexHandler, Filters, \
-    ConversationHandler, CommandHandler
+    ConversationHandler, CommandHandler, CallbackQueryHandler
 
 from config import telegram_key
 from parser import Parser
@@ -23,7 +23,8 @@ MONEY_THRESHOLD = 15
 
 
 def choices_kbrd(amount):
-    all_buttons = list(map(lambda x: InlineKeyboardButton(text=str(x)),
+    all_buttons = list(map(lambda x: InlineKeyboardButton(text=str(x),
+                                                          callback_data=str(x)),
                            range(1, amount + 1)))
     if amount <= 3:
         return InlineKeyboardMarkup([all_buttons])
@@ -51,7 +52,7 @@ class GameState:
         self.is_lethal = init_obj.get('is_lethal', False)
         self.is_victory = init_obj.get('is_victory', False)
 
-    def present(self, update, user_data):
+    def present(self, bot, update, user_data):
         current_message = ''
         for block in self.message_blocks:
             if not self.check(user_data, block.get('condition')):
@@ -194,7 +195,8 @@ class GameStateManager:
     def prompt_name(self, bot, update):
         user_id = update.message.from_user.id
         logger.debug('new user {} started a conversation'.format(user_id))
-        update.message.reply_text(p.NAME_PROMPT)
+        update.message.reply_text(p.NAME_PROMPT,
+                                  reply_markup=ReplyKeyboardRemove())
         return 0
 
     def save_name(self, bot, update, user_data):
@@ -206,11 +208,12 @@ class GameStateManager:
         user_data['last_earn'] = None
         user_data['money'] = 0
         update.message.reply_text(p.NAME_ACCEPTED)
-        user_data['current_state'].present(update, user_data)
+        user_data['current_state'].present(bot, update, user_data)
         return 1
 
     def process_choice(self, bot, update, user_data):
-        choice = int(update.message.text)
+        choice = int(update.callback_query.data)
+        update.callback_query.answer()
         try:
             new_state = user_data['filtered'][choice - 1]['dest_state']
         except IndexError:
@@ -218,19 +221,19 @@ class GameStateManager:
             return user_data['current_state'].state_index
         user_data['current_state'] = self.game_states[new_state]
         user_data['visited_states'].append(new_state)
-        user_data['current_state'].present(update, user_data)
+        user_data['current_state'].present(bot, update.callback_query, user_data)
         return new_state
 
     def input_correct(self, bot, update, user_data):
         new_state = self.on_correct_input
         user_data['current_state'] = self.game_states[new_state]
-        user_data['current_state'].present(update, user_data)
+        user_data['current_state'].present(bot, update, user_data)
         return new_state
 
     def input_wrong(self, bot, update, user_data):
         new_state = self.on_wrong_input
         user_data['current_state'] = self.game_states[new_state]
-        user_data['current_state'].present(update, user_data)
+        user_data['current_state'].present(bot, update, user_data)
         return new_state
 
     def input_random(self, bot, update, user_data):
@@ -262,6 +265,9 @@ def main():
         fallbacks=[],
         allow_reentry=True
     ))
+
+    dp.add_handler(CallbackQueryHandler(state_manager.process_choice,
+                                        pass_user_data=True))
 
     # Logging errors
     dp.add_error_handler(error)
