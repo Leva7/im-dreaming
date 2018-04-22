@@ -258,7 +258,7 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    state_manager = GameStateManager('text-based-madness.md')
+    state_manager = GameStateManager('im-dreaming.md')
 
     dp.add_handler(ConversationHandler(
         entry_points=[CommandHandler('start', state_manager.prompt_name)],
