@@ -107,6 +107,8 @@ class GameState:
                 '{}) {}'.format(idx, reply['text'])
                 for idx, reply in enumerate(filtered, 1)
             )
+            if not reply_choices:
+                return
             update.message.reply_text(reply_choices,
                                       parse_mode='markdown',
                                       reply_markup=choices_kbrd(len(filtered)))
@@ -172,8 +174,8 @@ class GameStateManager:
             return [RegexHandler(re.compile('ASK', re.I),
                                  self.input_correct,
                                  pass_user_data=True),
-                    RegexHandler('[a-zA-Z]{3}',
-                                 self.input_incorrect,
+                    RegexHandler('^[a-zA-Z]{3}$',
+                                 self.input_wrong,
                                  pass_user_data=True),
                     RegexHandler('1',
                                  self.process_choice,
@@ -184,7 +186,9 @@ class GameStateManager:
         else:
             return [RegexHandler('[0-9]+',
                                  self.process_choice,
-                                 pass_user_data=True)]
+                                 pass_user_data=True),
+                    CallbackQueryHandler(self.process_choice,
+                                         pass_user_data=True)]
 
     def get(self, state):
         return self[state]
@@ -212,8 +216,12 @@ class GameStateManager:
         return 1
 
     def process_choice(self, bot, update, user_data):
-        choice = int(update.callback_query.data)
-        update.callback_query.answer()
+        if update.callback_query is not None:
+            choice = int(update.callback_query.data)
+            update.callback_query.answer()
+        else:
+            choice = int(update.message.text)
+
         try:
             new_state = user_data['filtered'][choice - 1]['dest_state']
         except IndexError:
@@ -221,7 +229,7 @@ class GameStateManager:
             return user_data['current_state'].state_index
         user_data['current_state'] = self.game_states[new_state]
         user_data['visited_states'].append(new_state)
-        user_data['current_state'].present(bot, update.callback_query, user_data)
+        user_data['current_state'].present(bot, update.callback_query or update, user_data)
         return new_state
 
     def input_correct(self, bot, update, user_data):
@@ -265,9 +273,6 @@ def main():
         fallbacks=[],
         allow_reentry=True
     ))
-
-    dp.add_handler(CallbackQueryHandler(state_manager.process_choice,
-                                        pass_user_data=True))
 
     # Logging errors
     dp.add_error_handler(error)
