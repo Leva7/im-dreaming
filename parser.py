@@ -43,6 +43,8 @@ class Parser:
                                    'content': wait})
             elif part.startswith('<money'):
                 content = self.parse_money.fullmatch(part).group(1)
+                if content.isdigit():
+                    content = int(content)
                 components.append({'type': 'money',
                                    'content': content})
             else:
