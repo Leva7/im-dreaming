@@ -159,7 +159,6 @@ class GameStateManager:
     def __init__(self, game_file):
         self.game_states = {init_obj['state_idx']: GameState(init_obj)
                             for init_obj in Parser().parse(game_file)}
-        self.current_state = self.game_states[1]
 
     def __getitem__(self, state):
         if state == 0:
@@ -203,43 +202,43 @@ class GameStateManager:
 
     def save_name(self, bot, update, user_data):
         user_data.clear()
-        self.current_state = self.game_states[1]
+        user_data['current_state'] = self.game_states[1]
         user_data['char_name'] = update.message.text
         user_data['visited_states'] = [1]
         user_data['modifiers'] = set()
         user_data['last_earn'] = None
         user_data['money'] = 0
         update.message.reply_text(p.NAME_ACCEPTED)
-        self.current_state.present(update, user_data)
+        user_data['current_state'].present(update, user_data)
         return 1
 
     def process_choice(self, bot, update, user_data):
         choice = int(update.message.text)
         try:
-            new_state = self.current_state.replies[choice - 1]['dest_state']
+            new_state = user_data['current_state'].replies[choice - 1]['dest_state']
         except IndexError:
             update.message.reply_text(p.INVALID_CHOICE)
-            return self.current_state.state_index
-        self.current_state = self.game_states[new_state]
+            return user_data['current_state'].state_index
+        user_data['current_state'] = self.game_states[new_state]
         user_data['visited_states'].append(new_state)
-        self.current_state.present(update, user_data)
+        user_data['current_state'].present(update, user_data)
         return new_state
 
     def input_correct(self, bot, update, user_data):
         new_state = self.on_correct_input
-        self.current_state = self.game_states[new_state]
-        self.current_state.present(update, user_data)
+        user_data['current_state'] = self.game_states[new_state]
+        user_data['current_state'].present(update, user_data)
         return new_state
 
     def input_wrong(self, bot, update, user_data):
         new_state = self.on_wrong_input
-        self.current_state = self.game_states[new_state]
-        self.current_state.present(update, user_data)
+        user_data['current_state'] = self.game_states[new_state]
+        user_data['current_state'].present(update, user_data)
         return new_state
 
     def input_random(self, bot, update, user_data):
         update.message.reply_text(p.RANDOM_INPUT)
-        return self.current_state.state_index
+        return user_data['current_state'].state_index
 
     def reset_game(self, bot, update, user_data):
         update.message.reply_text(p.RESETTING)
