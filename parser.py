@@ -24,7 +24,9 @@ class Parser:
                 blocks.append({'condition': condition,
                                'content': self.break_to_components(content)})
             else:
-                blocks.append({'content': self.break_to_components(block)})
+                components = self.break_to_components(block)
+                if components:
+                    blocks.append({'content': components})
         return blocks
 
     def break_to_components(self, text):

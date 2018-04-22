@@ -84,7 +84,7 @@ class GameState:
                     user_data['money'] += money_obj.amount
                     if user_data['money'] >= MONEY_THRESHOLD:
                         user_data['modifiers'].add('money')
-        if current_message:
+        if current_message and not current_message.isspace():
             update.message.reply_text(
                 current_message.format(
                     char_name=user_data['char_name'],
