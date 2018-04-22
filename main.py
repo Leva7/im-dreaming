@@ -217,7 +217,7 @@ class GameStateManager:
         try:
             new_state = user_data['filtered'][choice - 1]['dest_state']
         except IndexError:
-            update.message.reply_text(p.INVALID_CHOICE)
+            update.callback_query.message.reply_text(p.INVALID_CHOICE)
             return user_data['current_state'].state_index
         user_data['current_state'] = self.game_states[new_state]
         user_data['visited_states'].append(new_state)
