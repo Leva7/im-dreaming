@@ -104,6 +104,7 @@ class GameState:
             user_data.clear()
         else:
             filtered = self.filter_replies(user_data)
+            user_data['filtered'] = filtered
             reply_choices = '\n'.join(
                 '{}) {}'.format(idx, reply['text'])
                 for idx, reply in enumerate(filtered, 1)
@@ -215,7 +216,7 @@ class GameStateManager:
     def process_choice(self, bot, update, user_data):
         choice = int(update.message.text)
         try:
-            new_state = user_data['current_state'].replies[choice - 1]['dest_state']
+            new_state = user_data['filtered'][choice - 1]['dest_state']
         except IndexError:
             update.message.reply_text(p.INVALID_CHOICE)
             return user_data['current_state'].state_index
