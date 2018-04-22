@@ -109,7 +109,11 @@ class GameState:
             )
             if not reply_choices:
                 return
-            update.message.reply_text(reply_choices,
+            update.message.reply_text(reply_choices.format(
+                                            char_name=user_data['char_name'],
+                                            last_earn=user_data['last_earn'],
+                                            money=user_data['money']
+                                        ),
                                       parse_mode='markdown',
                                       reply_markup=choices_kbrd(len(filtered)))
 
