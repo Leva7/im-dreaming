@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/Leva7/im-dreaming/avatar.jpg" alt="Bot avatar"
+<img src="https://raw.githubusercontent.com/Leva7/im-dreaming/master/avatar.jpg" alt="Bot avatar"
      title="Bot avatar" align="right" style="border-radius: 50%; width: 100px"/>
 
 # I'm dreaming
