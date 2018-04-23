@@ -1,5 +1,5 @@
-<img src="https://raw.githubusercontent.com/Leva7/im-dreaming/master/avatar.jpg" alt="Bot avatar"
-     title="Bot avatar" align="right" style="border-radius: 50%; width: 100px"/>
+<img src="https://raw.githubusercontent.com/Leva7/im-dreaming/master/avatar.gif" alt="Bot avatar"
+     title="Bot avatar" align="right" width="100" />
 
 # I'm dreaming
 A text-based game bot for Telegram ([@imdreamingbot](https://t.me/imdreamingbot)).
