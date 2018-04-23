@@ -3,7 +3,8 @@ import random
 import re
 import time
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, \
+    ReplyKeyboardRemove
 from telegram.error import TimedOut
 from telegram.ext import Updater, MessageHandler, RegexHandler, Filters, \
     ConversationHandler, CommandHandler, CallbackQueryHandler
@@ -22,10 +23,10 @@ logger = logging.getLogger(__name__)
 MONEY_THRESHOLD = 15
 
 
-def choices_kbrd(amount):
-    all_buttons = list(map(lambda x: InlineKeyboardButton(text=str(x),
-                                                          callback_data=str(x)),
-                           range(1, amount + 1)))
+def choices_kbrd(amount: int) -> InlineKeyboardMarkup:
+    '''Return an inline keyboard with buttons from 1 to `amount`.'''
+    all_buttons = [InlineKeyboardButton(text=str(btn), callback_data=str(btn))
+                   for btn in range(1, amount + 1)]
     if amount <= 3:
         return InlineKeyboardMarkup([all_buttons])
     else:
@@ -33,6 +34,8 @@ def choices_kbrd(amount):
 
 
 class Money:
+    '''Money object. If initialized with a range, generates an amount within
+    that range randomly.'''
     __slots__ = ['amount']
 
     def __init__(self, amount):
@@ -43,7 +46,8 @@ class Money:
 
 
 class GameState:
-    def __init__(self, init_obj):
+    '''Game state description.'''
+    def __init__(self, init_obj: dict):
         self.state_index = init_obj['state_idx']
         self.message_blocks = init_obj['message_blocks']
         self.replies = init_obj.get('replies')
@@ -52,7 +56,9 @@ class GameState:
         self.is_lethal = init_obj.get('is_lethal', False)
         self.is_victory = init_obj.get('is_victory', False)
 
-    def present(self, bot, update, user_data):
+    def present(self, bot, update, user_data: dict):
+        '''Present a state to the user based on their visited states and
+        modifiers.'''
         current_message = ''
         for block in self.message_blocks:
             if not self.check(user_data, block.get('condition')):
@@ -107,17 +113,21 @@ class GameState:
                 '{}) {}'.format(idx, reply['text'])
                 for idx, reply in enumerate(filtered, 1)
             )
+
             if not reply_choices:
                 return
-            update.message.reply_text(reply_choices.format(
-                                            char_name=user_data['char_name'],
-                                            last_earn=user_data['last_earn'],
-                                            money=user_data['money']
-                                        ),
-                                      parse_mode='markdown',
-                                      reply_markup=choices_kbrd(len(filtered)))
 
-    def filter_replies(self, user_data):
+            update.message.reply_text(
+                reply_choices.format(char_name=user_data['char_name'],
+                                     last_earn=user_data['last_earn'],
+                                     money=user_data['money']),
+                parse_mode='markdown',
+                reply_markup=choices_kbrd(len(filtered))
+            )
+
+    def filter_replies(self, user_data: dict) -> list:
+        '''Remove the replies from the current state that are inappropriate
+        for the user based on their visited states and modifiers.'''
         final_replies = []
         for reply in self.replies:
             if 'condition' not in reply:
@@ -128,7 +138,8 @@ class GameState:
         return final_replies
 
     @staticmethod
-    def check(user_data, condition):
+    def check(user_data: dict, condition: str) -> bool:
+        '''Check if the condition is met for the passed user data.'''
         if condition is None:
             return True
 
@@ -161,11 +172,16 @@ class GameState:
 
 
 class GameStateManager:
-    def __init__(self, game_file):
+    '''Class for managing game states presentation and user interaction with
+    the bot.'''
+    def __init__(self, game_file: str):
+        '''Initialize a game by passing a filename of a MD game description.'''
         self.game_states = {init_obj['state_idx']: GameState(init_obj)
                             for init_obj in Parser().parse(game_file)}
 
-    def __getitem__(self, state):
+    def __getitem__(self, state: int):
+        '''Called when a certain state is requested. Based on the state
+        properties, certain types of user input are accepted.'''
         if state == 0:
             return [MessageHandler(Filters.text,
                                    self.save_name,
@@ -194,20 +210,28 @@ class GameStateManager:
                     CallbackQueryHandler(self.process_choice,
                                          pass_user_data=True)]
 
-    def get(self, state):
+    def get(self, state: int):
+        '''Imitate the `dict` interface.'''
         return self[state]
 
     def values(self):
+        # For some reason, ConversationHandler needs to keep references to
+        # all available states by requesting the .values(). Returning the
+        # states would require building them all, which seems rather useless,
+        # considering that returning [] doesn't seem to affect the bot.
         return []
 
     def prompt_name(self, bot, update):
+        '''Ask the user to name their character.'''
         user_id = update.message.from_user.id
         logger.debug('new user {} started a conversation'.format(user_id))
         update.message.reply_text(p.NAME_PROMPT,
                                   reply_markup=ReplyKeyboardRemove())
         return 0
 
-    def save_name(self, bot, update, user_data):
+    def save_name(self, bot, update, user_data: dict):
+        '''Write down the name and initialize the `user_data` object
+        before the game.'''
         user_data.clear()
         user_data['current_state'] = self.game_states[1]
         user_data['char_name'] = update.message.text
@@ -219,7 +243,9 @@ class GameStateManager:
         user_data['current_state'].present(bot, update, user_data)
         return 1
 
-    def process_choice(self, bot, update, user_data):
+    def process_choice(self, bot, update, user_data: dict) -> int:
+        '''Handle the user's reply choice, sent either with an inline button
+        or a text message.'''
         if update.callback_query is not None:
             choice = int(update.callback_query.data)
             update.callback_query.answer()
@@ -233,31 +259,33 @@ class GameStateManager:
             return user_data['current_state'].state_index
         user_data['current_state'] = self.game_states[new_state]
         user_data['visited_states'].append(new_state)
-        user_data['current_state'].present(bot, update.callback_query or update, user_data)
+        user_data['current_state'].present(bot,
+                                           update.callback_query or update,
+                                           user_data)
         return new_state
 
-    def input_correct(self, bot, update, user_data):
+    def input_correct(self, bot, update, user_data: dict) -> int:
+        'Handle the case where the user enters the correct code for the lock.'
         new_state = self.on_correct_input
         user_data['current_state'] = self.game_states[new_state]
         user_data['current_state'].present(bot, update, user_data)
         return new_state
 
-    def input_wrong(self, bot, update, user_data):
+    def input_wrong(self, bot, update, user_data: dict) -> int:
+        'Handle the case where the user enters the wrong code for the lock.'
         new_state = self.on_wrong_input
         user_data['current_state'] = self.game_states[new_state]
         user_data['current_state'].present(bot, update, user_data)
         return new_state
 
-    def input_random(self, bot, update, user_data):
+    def input_random(self, bot, update, user_data: dict) -> int:
+        '''Handle the case where the user enters something
+        different from a code.'''
         update.message.reply_text(p.RANDOM_INPUT)
         return user_data['current_state'].state_index
 
-    def reset_game(self, bot, update, user_data):
-        update.message.reply_text(p.RESETTING)
-        user_data.clear()
 
-
-def error(bot, update, error):
+def error_handler(bot, update, error):
     if error == TimedOut:
         return
     logger.error(error)
@@ -279,7 +307,7 @@ def main():
     ))
 
     # Logging errors
-    dp.add_error_handler(error)
+    dp.add_error_handler(error_handler)
 
     # Actually start the bot
     updater.start_polling()
