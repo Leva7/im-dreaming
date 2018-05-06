@@ -11,7 +11,7 @@ class Parser:
     if_ptn = re.compile('(<if [^>]+>.+?</if>)', re.S)
     parse_if = re.compile('<if ([^>]+)>(.+?)</if>', re.S)
 
-    reply_ptn = re.compile('> (?:<if ([^>]+)>)?(.+?) \(([0-9]+)\)(?:</if>)?')
+    reply_ptn = re.compile('> (?:<if ([^>]+)>)?(.+?) \\(([0-9]+)\\)(?:</if>)?')
 
     def __init__(self):
         self.state_input = None
