@@ -83,13 +83,13 @@ class GameState:
                     if content.startswith('not'):
                         user_data['modifiers'].remove(content.split()[1])
                     else:
-                        user_data['modifiers'].add(content)
+                        user_data['modifiers'].append(content)
                 elif component['type'] == 'money':
                     money_obj = Money(component['content'])
                     user_data['last_earn'] = money_obj.amount
                     user_data['money'] += money_obj.amount
                     if user_data['money'] >= MONEY_THRESHOLD:
-                        user_data['modifiers'].add('money')
+                        user_data['modifiers'].append('money')
         if current_message and not current_message.isspace():
             update.message.reply_text(
                 current_message.format(
@@ -236,7 +236,7 @@ class GameStateManager:
         user_data['current_state'] = self.game_states[1]
         user_data['char_name'] = update.message.text
         user_data['visited_states'] = [1]
-        user_data['modifiers'] = set()
+        user_data['modifiers'] = []
         user_data['last_earn'] = None
         user_data['money'] = 0
         update.message.reply_text(p.NAME_ACCEPTED)
