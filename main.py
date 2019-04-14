@@ -47,6 +47,7 @@ class Money:
 
 class GameState:
     '''Game state description.'''
+
     def __init__(self, init_obj: dict):
         self.state_index = init_obj['state_idx']
         self.message_blocks = init_obj['message_blocks']
