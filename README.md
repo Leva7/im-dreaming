@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/Leva7/im-dreaming/master/avatar.gif" alt="Bot avatar"
+<img src="https://raw.githubusercontent.com/illright/im-dreaming/master/avatar.gif" alt="Bot avatar"
      title="Bot avatar" align="right" width="100" />
 
 # I'm dreaming
@@ -14,4 +14,4 @@ The only dependency is [`python-telegram-bot`](https://github.com/python-telegra
 The name and the avatar background are ~~stolen~~taken from Slippy's song ["Promise Me"](https://monstercat.lnk.to/PromiseMe)
 
 ## License
-This project is licensed under the GPL-3.0 License - see the [LICENSE](https://github.com/Leva7/im-dreaming/blob/master/LICENSE) file for details.
+This project is licensed under the GPL-3.0 License - see the [LICENSE](https://github.com/illright/im-dreaming/blob/master/LICENSE) file for details.
